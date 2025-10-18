@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MezzAI — Live AI Demo Suite</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg: #0b0f14;         /* deep slate */
+      --panel: #111827;      /* gunmetal */
+      --muted: #94a3b8;      /* slate-400 */
+      --text: #e5e7eb;       /* gray-200 */
+      --brand: #2563eb;      /* blue-600 */
+      --brand-2:#0ea5e9;     /* sky-500 */
+      --accent:#22c55e;      /* green-500 */
+      --warn:#f59e0b;        /* amber-500 */
+      --danger:#ef4444;      /* red-500 */
+      --border:#1f2937;      /* gray-800 */
+      --card:#0f172a;        /* slate-900 */
+      --shadow: 0 10px 30px rgba(0,0,0,.35);
+      --radius: 16px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; background: radial-gradient(1200px 800px at 80% -10%, rgba(37,99,235,.15), transparent 60%),
+      radial-gradient(1000px 700px at -10% 10%, rgba(14,165,233,.12), transparent 50%), var(--bg);
+      color:var(--text); font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+    }
+    a{color:var(--brand)}
+    header{
+      position:sticky; top:0; z-index:50; backdrop-filter:saturate(180%) blur(8px);
+      background:rgba(11,15,20,.7); border-bottom:1px solid var(--border);
+    }
+    .wrap{max-width:1200px; margin:0 auto; padding:20px}
+    .row{display:grid; grid-template-columns: 1fr; gap:18px}
+    @media (min-width: 900px){ .row-2{grid-template-columns: 1.25fr .75fr} }
+    @media (min-width: 900px){ .row-3{grid-template-columns: repeat(3, 1fr)} }
+    @media (min-width: 900px){ .row-2eq{grid-template-columns: repeat(2, 1fr)} }
+
+    .brand{display:flex; align-items:center; gap:12px}
+    .logo{width:36px; height:36px; display:grid; place-items:center; border-radius:10px; background:linear-gradient(135deg, var(--brand), var(--brand-2)); box-shadow: var(--shadow)}
+    .logo span{font-weight:800}
+    .title{font-size:20px; font-weight:700; letter-spacing:.3px}
+
+    .badge{display:inline-flex; align-items:center; gap:8px; padding:6px 10px; border:1px solid var(--border); border-radius:999px; font-size:12px; color:var(--muted); background:rgba(255,255,255,.02)}
+    .spacer{flex:1}
+
+    main{padding:20px 0 60px}
+    .card{
+      background: linear-gradient(180deg, rgba(17,24,39,.72), rgba(15,23,42,.72));
+      border:1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow);
+    }
+    .card h3{margin:0 0 8px; font-size:16px; font-weight:700}
+    .card .sub{color:var(--muted); font-size:13px; margin-bottom:14px}
+    .card .body{padding:16px}
+    .card .footer{padding:12px 16px; border-top:1px solid var(--border); display:flex; gap:10px; align-items:center; justify-content:space-between}
+
+    .btn{display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border-radius:10px; border:1px solid var(--border); background:#0b1220; color:var(--text); cursor:pointer}
+    .btn:hover{background:#0c1424}
+    .btn.primary{background: linear-gradient(135deg, var(--brand), var(--brand-2)); border:none}
+    .btn.success{background: linear-gradient(135deg, #16a34a, #22c55e); border:none}
+    .btn.warn{background: linear-gradient(135deg, #f59e0b, #fbbf24); border:none}
+
+    .input, .select, .textarea{width:100%; background:#0b1220; color:var(--text); border:1px solid var(--border); border-radius:10px; padding:10px 12px}
+    .textarea{min-height:110px; resize:vertical}
+    .grid{display:grid; gap:12px}
+    .g2{grid-template-columns: 1fr}
+    @media (min-width: 900px){ .g2{grid-template-columns: 1fr 1fr} }
+
+    .stat{
+      display:flex; align-items:center; justify-content:space-between; padding:12px 14px; border:1px dashed var(--border); border-radius:12px; color:var(--muted)
+    }
+    .mono{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size:12px}
+
+    /* Floating chatbot */
+    .fab{position:fixed; right:22px; bottom:22px; z-index:60}
+    .chat-btn{width:56px; height:56px; border-radius:50%; border:none; cursor:pointer; box-shadow: var(--shadow); color:white; background:linear-gradient(135deg, var(--brand), var(--brand-2))}
+    .chat-panel{position:fixed; right:22px; bottom:90px; width:360px; max-height:65vh; display:none; flex-direction:column; overflow:hidden; border:1px solid var(--border); border-radius:14px; background:var(--panel); box-shadow: var(--shadow); z-index:60}
+    .chat-header{padding:10px 12px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:10px}
+    .chat-log{padding:12px; overflow:auto; display:flex; flex-direction:column; gap:10px}
+    .bubble{max-width:80%; padding:10px 12px; border-radius:12px; background:#0b1220}
+    .bubble.user{background:#0e1726; margin-left:auto}
+    .bubble.bot{background:#0a1220; border:1px solid var(--border)}
+    .chat-input{display:flex; gap:8px; padding:10px; border-top:1px solid var(--border)}
+    .chat-input input{flex:1}
+
+    /* Skeleton loaders */
+    .skeleton{background: linear-gradient(90deg, rgba(255,255,255,.06), rgba(255,255,255,.12), rgba(255,255,255,.06)); background-size:200% 100%; animation: shimmer 1.2s infinite}
+    @keyframes shimmer{0%{background-position:200% 0} 100%{background-position:-200% 0}}
+    .placeholder{border:1px dashed var(--border); border-radius:12px; padding:14px; color:var(--muted); font-size:14px}
+
+    footer{margin-top:30px; padding-top:16px; border-top:1px solid var(--border); color:var(--muted); font-size:13px}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap" style="display:flex; align-items:center; gap:16px">
+      <div class="brand">
+        <div class="logo"><span>μ</span></div>
+        <div class="title">MezzAI — Live AI Demo Suite</div>
+      </div>
+      <div class="spacer"></div>
+      <div class="badge" title="This site runs real API calls when wired.">Live Mode • Real APIs</div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <!-- HERO: Proposal Generator + KPI Dashboard -->
+    <section class="row row-2">
+      <div class="card" id="card-proposal">
+        <div class="body">
+          <h3>AI Proposal Generator</h3>
+          <div class="sub">Turn a short brief into a client‑ready proposal with scope, timeline, and pricing.</div>
+          <div class="grid g2">
+            <input class="input" id="pg-company" placeholder="Company (e.g., Acme Fitness)" />
+            <input class="input" id="pg-industry" placeholder="Industry (e.g., Gym / Fitness)" />
+            <textarea class="textarea" id="pg-goals" placeholder="Goals (comma‑separated)"></textarea>
+            <div class="grid" style="gap:10px">
+              <input class="input" id="pg-budget" placeholder="Budget (e.g., $1,500)" />
+              <input class="input" id="pg-timeline" placeholder="Timeline (e.g., 3–4 weeks)" />
+            </div>
+          </div>
+        </div>
+        <div class="footer">
+          <button class="btn primary" id="pg-generate">Generate Proposal</button>
+          <span class="mono" id="pg-status">POST /api/proposal → html + pdfUrl</span>
+        </div>
+        <div class="body">
+          <div id="pg-preview" class="placeholder">Proposal preview will render here (HTML), then offer a PDF download link.</div>
+        </div>
+      </div>
+
+      <div class="card" id="card-kpis">
+        <div class="body">
+          <h3>Live KPI Dashboard</h3>
+          <div class="sub">Charts update as automations run (emails handled, leads tagged, proposals made).</div>
+          <div class="stat"><span>Opens today</span><strong id="kpi-opens">—</strong></div>
+          <div class="stat"><span>Leads this week</span><strong id="kpi-leads">—</strong></div>
+          <div class="stat"><span>Proposals generated</span><strong id="kpi-proposals">—</strong></div>
+          <div class="placeholder" style="margin-top:12px">Canvas for Chart.js
+            <div style="height:8px"></div>
+            <canvas id="chart-main" height="140"></canvas>
+          </div>
+        </div>
+        <div class="footer">
+          <span class="mono">GET /metrics/* (Firebase)</span>
+          <button class="btn" id="seed-kpis">Seed Sample Metrics</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ROW: Chatbot • Email Responder • Lead Classifier -->
+    <section class="row row-3">
+      <div class="card" id="card-chat">
+        <div class="body">
+          <h3>Chatbot (Corner Widget)</h3>
+          <div class="sub">Floating assistant for site visitors. Logs chats to Firebase.</div>
+          <div class="placeholder">Uses <span class="mono">POST /api/stream-gpt</span> with SSE for streaming tokens.
+          </div>
+        </div>
+        <div class="footer">
+          <span class="mono">/chats/{session}</span>
+          <button class="btn" id="open-chat">Open Widget</button>
+        </div>
+      </div>
+
+      <div class="card" id="card-email">
+        <div class="body">
+          <h3>Email Auto‑Responder</h3>
+          <div class="sub">Paste an incoming email and generate a reply. Optional: create Gmail draft.</div>
+          <textarea class="textarea" id="er-input" placeholder="Paste a customer email here..."></textarea>
+        </div>
+        <div class="footer">
+          <button class="btn primary" id="er-draft">Generate Reply</button>
+          <span class="mono">POST /api/email/draft → { draftId, html }</span>
+        </div>
+        <div class="body">
+          <div id="er-preview" class="placeholder">Draft reply preview will render here.</div>
+        </div>
+      </div>
+
+      <div class="card" id="card-leads">
+        <div class="body">
+          <h3>Lead Classifier</h3>
+          <div class="sub">Auto‑tags messages (Sales / Support / HR) with confidence and next action.</div>
+          <textarea class="textarea" id="lc-input" placeholder="Paste 2–3 messages separated by ---"></textarea>
+        </div>
+        <div class="footer">
+          <button class="btn primary" id="lc-run">Classify Leads</button>
+          <span class="mono">POST /api/leads/classify → [{category, confidence}]</span>
+        </div>
+        <div class="body">
+          <div id="lc-results" class="placeholder">Classification results will appear here.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ROW: Summarizer (wide) • Admin Peek -->
+    <section class="row row-2eq">
+      <div class="card" id="card-sum">
+        <div class="body">
+          <h3>Meeting Summarizer</h3>
+          <div class="sub">Upload an MP3/WAV, get transcript + executive summary + PDF/TXT downloads.</div>
+          <input type="file" id="sum-file" accept="audio/*" class="input" />
+        </div>
+        <div class="footer">
+          <button class="btn primary" id="sum-upload">Upload & Summarize</button>
+          <span class="mono">POST /api/summarize → { transcriptUrl, pdfUrl, txtUrl }</span>
+        </div>
+        <div class="body">
+          <div id="sum-output" class="placeholder">Summary and transcript preview will render here.</div>
+        </div>
+      </div>
+
+      <div class="card" id="card-admin">
+        <div class="body">
+          <h3>Admin Peek (read‑only)</h3>
+          <div class="sub">Recent chats, proposals, emails. Replace with secure login later.</div>
+          <div class="placeholder">GET /admin/peek → last 25 items table</div>
+        </div>
+        <div class="footer">
+          <button class="btn" id="admin-refresh">Refresh</button>
+          <span class="mono">/logs/* (Firebase)</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer: ROI Calculator -->
+    <section class="row">
+      <div class="card" id="card-roi">
+        <div class="body">
+          <h3>ROI Calculator</h3>
+          <div class="sub">Estimate monthly ROI from automation time‑savings.</div>
+          <div class="grid g2">
+            <input class="input" id="roi-hours" type="number" min="0" step="1" placeholder="Hours saved per week (per person)"/>
+            <input class="input" id="roi-team" type="number" min="1" step="1" placeholder="Team size"/>
+            <input class="input" id="roi-rate" type="number" min="0" step="1" placeholder="Avg hourly cost ($)"/>
+            <input class="input" id="roi-tool" type="number" min="0" step="1" placeholder="Monthly tool cost ($)"/>
+          </div>
+        </div>
+        <div class="footer">
+          <button class="btn success" id="roi-calc">Calculate ROI</button>
+          <span class="mono" id="roi-out">—</span>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      Built by MezzAI. This page uses real API endpoints when connected; placeholders are marked with intended routes.
+    </footer>
+  </main>
+
+  <!-- Floating Chatbot Widget (UI only; wire to /api/stream-gpt) -->
+  <div class="fab">
+    <button class="chat-btn" id="chat-toggle" title="Open MezzAI Assistant">💬</button>
+  </div>
+  <div class="chat-panel" id="chat-panel" aria-hidden="true">
+    <div class="chat-header">
+      <strong>MezzAI Assistant</strong>
+      <div class="spacer"></div>
+      <button class="btn" id="chat-close">Close</button>
+    </div>
+    <div class="chat-log" id="chat-log">
+      <div class="bubble bot">Hi! I can answer questions about MezzAI automations. (Streaming via <span class="mono">/api/stream-gpt</span> once wired.)</div>
+    </div>
+    <div class="chat-input">
+      <input class="input" id="chat-text" placeholder="Type a message..." />
+      <button class="btn primary" id="chat-send">Send</button>
+    </div>
+  </div>
+
+  <script>
+    // --- Tiny helper to stub interactions for now ---
+    const $ = (q) => document.querySelector(q);
+    const setStatus = (el, msg) => el.textContent = msg;
+    const toast = (msg) => { console.log('[toast]', msg); }
+
+    // Proposal Generator (placeholder action)
+    $('#pg-generate').addEventListener('click', () => {
+      setStatus($('#pg-status'), 'Calling /api/proposal ...');
+      const preview = $('#pg-preview');
+      preview.innerHTML = '<div class="skeleton" style="height:22px; border-radius:8px"></div><div style="height:8px"></div><div class="skeleton" style="height:120px; border-radius:8px"></div>';
+      // TODO: fetch('/api/proposal', { ... })
+      setTimeout(() => {
+        preview.innerHTML = '<h4 style="margin:0 0 6px">Sample Proposal (placeholder)</h4><ul style="margin:0; padding-left:18px"><li>Scope</li><li>Deliverables</li><li>Timeline</li><li>Pricing</li></ul><div style="margin-top:10px"><button class="btn">Download PDF</button></div>';
+        setStatus($('#pg-status'), 'Ready ✓');
+      }, 900);
+    });
+
+    // KPI seed (local demo-only feel; replace with Firebase reads)
+    $('#seed-kpis').addEventListener('click', () => {
+      $('#kpi-opens').textContent = Math.floor(Math.random()*200 + 40);
+      $('#kpi-leads').textContent = Math.floor(Math.random()*30 + 5);
+      $('#kpi-proposals').textContent = Math.floor(Math.random()*15 + 1);
+      toast('Seeded KPIs (static). Replace with Firebase listeners.');
+    });
+
+    // Email responder placeholder
+    $('#er-draft').addEventListener('click', () => {
+      const body = $('#er-input').value.trim();
+      if (!body) { alert('Paste an incoming email first.'); return; }
+      const prev = $('#er-preview');
+      prev.innerHTML = '<div class="skeleton" style="height:18px; border-radius:8px"></div><div style="height:6px"></div><div class="skeleton" style="height:90px; border-radius:8px"></div>';
+      setTimeout(() => {
+        prev.innerHTML = '<div><strong>Subject:</strong> Re: Your Inquiry<br/><br/>Hi [Name],<br/>Thanks for reaching out...<br/><br/>Best,<br/>MezzAI</div>';
+      }, 700);
+    });
+
+    // Lead classifier placeholder
+    $('#lc-run').addEventListener('click', () => {
+      const area = $('#lc-input');
+      if (!area.value.trim()) { alert('Paste messages first.'); return; }
+      const out = $('#lc-results');
+      out.innerHTML = '<div class="skeleton" style="height:20px; border-radius:8px"></div>';
+      setTimeout(() => {
+        out.innerHTML = '<div style="display:flex; gap:8px; flex-wrap:wrap">\
+        <span class="badge" style="border-color:#14532d; color:#86efac">Sales • 0.91</span>\
+        <span class="badge" style="border-color:#1e3a8a; color:#93c5fd">Support • 0.73</span>\
+        <span class="badge" style="border-color:#7c2d12; color:#fdba74">HR • 0.62</span></div>';
+      }, 600);
+    });
+
+    // Summarizer placeholder
+    $('#sum-upload').addEventListener('click', () => {
+      const f = $('#sum-file').files[0];
+      if (!f) { alert('Choose an audio file.'); return; }
+      const out = $('#sum-output');
+      out.innerHTML = '<div class="skeleton" style="height:18px; border-radius:8px"></div><div style="height:8px"></div><div class="skeleton" style="height:120px; border-radius:8px"></div>';
+      setTimeout(() => {
+        out.innerHTML = '<strong>Summary:</strong> 5 action items and 3 key decisions identified. <br/><br/>\
+        <div style="display:flex; gap:8px; flex-wrap:wrap"><button class="btn">Download PDF</button><button class="btn">Download TXT</button></div>';
+      }, 1000);
+    });
+
+    // Admin peek placeholder
+    $('#admin-refresh').addEventListener('click', () => {
+      alert('Replace with GET /admin/peek and render a table of recent items.');
+    });
+
+    // ROI calc
+    $('#roi-calc').addEventListener('click', () => {
+      const hours = +$('#roi-hours').value || 0;
+      const team = +$('#roi-team').value || 1;
+      const rate = +$('#roi-rate').value || 0;
+      const tool = +$('#roi-tool').value || 0;
+      const monthlySavings = hours * team * rate * 4; // ~4 weeks/month
+      const net = monthlySavings - tool;
+      $('#roi-out').textContent = `Net monthly ROI: $${net.toLocaleString()}`;
+    });
+
+    // Floating chat widget (UI only)
+    const panel = $('#chat-panel');
+    $('#open-chat').addEventListener('click', () => { panel.style.display = 'flex'; panel.setAttribute('aria-hidden','false'); });
+    $('#chat-toggle').addEventListener('click', () => { panel.style.display = 'flex'; panel.setAttribute('aria-hidden','false'); });
+    $('#chat-close').addEventListener('click', () => { panel.style.display = 'none'; panel.setAttribute('aria-hidden','true'); });
+    $('#chat-send').addEventListener('click', () => {
+      const t = $('#chat-text');
+      if(!t.value.trim()) return;
+      const log = $('#chat-log');
+      const user = document.createElement('div'); user.className='bubble user'; user.textContent = t.value; log.appendChild(user);
+      const bot = document.createElement('div'); bot.className='bubble bot'; bot.innerHTML = '<em>Streaming from /api/stream-gpt...</em>'; log.appendChild(bot);
+      t.value=''; log.scrollTop = log.scrollHeight;
+      // TODO: stream from SSE endpoint
+    });
+  </script>
+  <!-- Optional: Chart.js CDN (safe to remove until wiring real charts) -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</body>
+</html>
