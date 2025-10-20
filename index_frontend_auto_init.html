@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MezzAI Demo — Frontend Only (Auto‑Init, Live GPT + Firebase + Population)</title>
+  <style>
+    :root { --bg:#0b1220; --card:#121b2e; --muted:#9bb0d3; --text:#e8f0ff; --accent:#4da3ff; }
+    html, body { height:100%; margin:0; font-family:ui-sans-serif, system-ui, Segoe UI, Roboto, Helvetica, Arial; background:var(--bg); color:var(--text); }
+    .wrap { max-width:1100px; margin:0 auto; padding:24px; }
+    h1 { margin:0 0 6px; }
+    .muted { color: var(--muted); font-size: 0.95rem; }
+    .grid { display:grid; grid-template-columns: 1fr 1fr; gap:16px; }
+    .card { background:var(--card); border:1px solid rgba(255,255,255,.06); border-radius:16px; padding:16px; box-shadow:0 4px 24px rgba(0,0,0,.2); }
+    .row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+    input[type="text"], textarea { width:100%; background:#0b1426; color:var(--text); border:1px solid rgba(255,255,255,.08); border-radius:12px; padding:10px 12px; outline:none; }
+    textarea { min-height:120px; resize:vertical; }
+    button { background:var(--accent); color:#00122a; border:0; padding:10px 14px; border-radius:12px; cursor:pointer; font-weight:600; }
+    button.secondary { background:#223356; color: var(--text); }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+    pre { white-space:pre-wrap; word-wrap:break-word; background:#0b1426; padding:12px; border-radius:12px; border:1px solid rgba(255,255,255,.08); }
+    .pill { display:inline-block; padding:4px 8px; border-radius:999px; background:#152038; color:#cfe1ff; font-size:.8rem; }
+    .small { font-size:.9rem; }
+    .ok { color:#86efac; }
+    .err { color:#fca5a5; }
+    .footer { margin-top:18px; color:#8ea7ce; font-size:.85rem; }
+    @media (max-width: 1100px){ .grid { grid-template-columns: 1fr; } }
+    .value-big { font-size:1.6rem; font-weight:800; letter-spacing:.5px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>MezzAI — Frontend‑only Demo</h1>
+    <div class="muted">This one file auto‑initializes <strong>Firebase</strong>, calls <strong>OpenAI</strong> directly, and renders a <strong>live world population</strong> chart based on your baseline.</div>
+
+    <!-- GPT + Email -->
+    <div class="grid" style="margin-top:16px">
+      <div class="card">
+        <strong>🤖 GPT Playground</strong>
+        <p class="small muted">Sends a Chat Completions request from the browser (demo only).</p>
+        <textarea id="gptPrompt" placeholder="Type a prompt..."></textarea>
+        <div class="row" style="margin-top:10px">
+          <button id="btnRunGPT">Run GPT</button>
+        </div>
+        <div id="gptOut" class="footer mono"></div>
+      </div>
+
+      <div class="card">
+        <strong>✉️ Email Draft</strong>
+        <p class="small muted">Paste an email. We’ll ask GPT for a concise reply.</p>
+        <textarea id="emailBody" placeholder="Paste email text here..."></textarea>
+        <div class="row" style="margin-top:10px">
+          <button id="btnEmailDraft">Generate Reply</button>
+        </div>
+        <div id="emailOut" class="footer mono"></div>
+      </div>
+    </div>
+
+    <!-- Lead Classifier + Metrics -->
+    <div class="grid" style="margin-top:16px">
+      <div class="card">
+        <strong>🗂️ Lead Classifier</strong>
+        <p class="small muted">Enter messages separated by <code>---</code>. Returns JSON.</p>
+        <textarea id="leadText" placeholder="Acme asking for a demo on Tuesday --- My PTO request for Thursday --- Cannot login to dashboard"></textarea>
+        <div class="row" style="margin-top:10px">
+          <button id="btnClassify">Classify</button>
+        </div>
+        <pre id="leadOut"></pre>
+      </div>
+
+      <div class="card">
+        <strong>📈 KPI Metrics (Firebase client)</strong>
+        <p class="small muted">Writes/reads Realtime Database at <code>/metrics/demo</code>. Ensure your demo rules allow it (or sign in a user).</p>
+        <div class="row">
+          <button id="btnSeed">Seed Demo Metrics</button>
+          <button id="btnPeek" class="secondary">Peek Latest</button>
+        </div>
+        <pre id="metricsOut"></pre>
+      </div>
+    </div>
+
+    <!-- Live Population Chart -->
+    <div class="card" style="margin-top:16px">
+      <strong>🌍 Live World Population</strong>
+      <p class="small muted">
+        Baseline: <span id="popBase" class="mono"></span> — Growth rate: <span id="popRate" class="mono"></span> per second.
+      </p>
+      <div class="row" style="justify-content:space-between; align-items:flex-end;">
+        <div>
+          <div class="small muted">Estimated current world population</div>
+          <div id="popValue" class="value-big mono">–</div>
+        </div>
+      </div>
+      <canvas id="worldPopChart" style="margin-top:12px; width:100%; height:320px;"></canvas>
+    </div>
+
+    <!-- Mini Chat -->
+    <div class="card" style="margin-top:16px">
+      <strong>💬 Mini Chat</strong>
+      <p class="small muted">Single‑turn chat. For streaming & history, use a backend later.</p>
+      <div class="row">
+        <input id="chatInput" type="text" placeholder="Ask something..." />
+        <button id="btnChat">Send</button>
+      </div>
+      <div id="chatLog" class="footer"></div>
+    </div>
+
+    <div class="footer">
+      ⚠️ Some networks/browsers block direct OpenAI calls (CORS). If you hit errors, swap to the serverless proxy later.
+    </div>
+  </div>
+
+  <!-- Firebase Client SDK (compat) -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+  <script>
+  // ====== OPENAI KEY PLACEHOLDER (EDIT BEFORE USE) ======
+  const OPENAI_API_KEY = "PASTE_OPENAI_KEY_HERE"; // <- put your sk-... here
+
+  // ====== FIREBASE CLIENT CONFIG (embedded) ======
+  const FIREBASE_CONFIG = {
+    apiKey: "AIzaSyCs8BOeV5LVA60qjkAK0BMn_vxq-TzlLXM",
+    authDomain: "mezzai.firebaseapp.com",
+    databaseURL: "https://mezzai-default-rtdb.firebaseio.com",
+    projectId: "mezzai",
+    storageBucket: "mezzai.firebasestorage.app",
+    messagingSenderId: "889134910925",
+    appId: "1:889134910925:web:88c3568f22d64725378884",
+    measurementId: "G-XQF3EFBM8S"
+  };
+
+  // ====== Auto‑init Firebase on load ======
+  let DB = null;
+  try {
+    firebase.initializeApp(FIREBASE_CONFIG);
+    DB = firebase.database();
+  } catch (e) {
+    console.error("Firebase init failed:", e);
+  }
+
+  // === OpenAI helpers ===
+  async function runGPT(prompt){
+    if(!OPENAI_API_KEY || !OPENAI_API_KEY.startsWith("sk-")) throw new Error("OpenAI key missing. Edit OPENAI_API_KEY in this file.");
+    const res = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + OPENAI_API_KEY
+      },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        messages: [{ role: "user", content: prompt }]
+      })
+    });
+    if(!res.ok){
+      const text = await res.text();
+      throw new Error("OpenAI error: " + res.status + " " + text);
+    }
+    const data = await res.json();
+    return data.choices?.[0]?.message?.content || "(no content)";
+  }
+
+  // === Firebase demo ===
+  async function seedMetrics(){
+    if(!DB) throw new Error("Firebase not initialized");
+    const ref = DB.ref("metrics/demo");
+    const payload = {
+      at: Date.now(),
+      opensToday: Math.floor(Math.random()*200 + 40),
+      leadsThisWeek: Math.floor(Math.random()*30 + 5),
+      proposals: Math.floor(Math.random()*15 + 1),
+    };
+    await ref.set(payload);
+    return payload;
+  }
+
+  async function peekMetrics(){
+    if(!DB) throw new Error("Firebase not initialized");
+    const snap = await DB.ref("metrics/demo").get();
+    return snap.val();
+  }
+
+  // === Live World Population ===
+  // Baseline provided by you:
+  // Base population: 8,213,500,000
+  // Base timestamp: 2025-10-20 11:20:00 UTC
+  // Net growth: ~70,000,000 per year.
+  const BASE_POP = 8213500000;
+  const BASE_AT_ISO = "2025-10-20T11:20:00Z"; // UTC
+  const NET_PER_SEC = 70000000 / (365*24*3600); // ~2.22/s
+
+  function currentPopulationEstimate(){
+    const seconds = (Date.now() - Date.parse(BASE_AT_ISO)) / 1000;
+    return BASE_POP + seconds * NET_PER_SEC;
+  }
+  function formatNumber(n){ return n.toLocaleString(undefined, { maximumFractionDigits: 0 }); }
+
+  let popChart;
+  function startPopulationChart(){
+    const ctx = document.getElementById("worldPopChart").getContext("2d");
+    const labels = [];
+    const data = [];
+    const now = Date.now();
+    for (let i=59; i>=0; i--) {
+      labels.push(new Date(now - i*1000).toLocaleTimeString());
+      data.push(currentPopulationEstimate() - (59-i)*NET_PER_SEC);
+    }
+    popChart = new Chart(ctx, {
+      type: "line",
+      data: {
+        labels,
+        datasets: [{
+          label: "Estimated Population",
+          data,
+          tension: 0.25,
+          borderWidth: 2,
+          pointRadius: 0
+        }]
+      },
+      options: {
+        responsive: true,
+        animation: false,
+        scales: {
+          y: { ticks: { callback: (v)=>formatNumber(v) } }
+        },
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: ctx => " " + formatNumber(ctx.parsed.y) } }
+        }
+      }
+    });
+
+    document.getElementById("popBase").textContent =
+      `${formatNumber(BASE_POP)} @ ${new Date(BASE_AT_ISO).toLocaleString()}`;
+    document.getElementById("popRate").textContent = (NET_PER_SEC).toFixed(2);
+    document.getElementById("popValue").textContent = formatNumber(currentPopulationEstimate());
+
+    setInterval(() => {
+      const y = currentPopulationEstimate();
+      const t = new Date().toLocaleTimeString();
+      popChart.data.labels.push(t);
+      popChart.data.datasets[0].data.push(y);
+      if (popChart.data.labels.length > 60) {
+        popChart.data.labels.shift();
+        popChart.data.datasets[0].data.shift();
+      }
+      popChart.update("none");
+      document.getElementById("popValue").textContent = formatNumber(y);
+    }, 1000);
+  }
+
+  // === UI wiring ===
+  window.addEventListener("DOMContentLoaded", () => {
+    // Start population chart immediately
+    startPopulationChart();
+
+    // GPT playground
+    document.getElementById("btnRunGPT").addEventListener("click", async () => {
+      const outEl = document.getElementById("gptOut");
+      outEl.textContent = "Running...";
+      try {
+        const prompt = (document.getElementById("gptPrompt").value || "Say hello in one short line.");
+        const out = await runGPT(prompt);
+        outEl.textContent = out;
+      } catch(e){ outEl.textContent = e.message; }
+    });
+
+    // Email draft
+    document.getElementById("btnEmailDraft").addEventListener("click", async () => {
+      const body = (document.getElementById("emailBody").value || "").trim();
+      const outEl = document.getElementById("emailOut");
+      if(!body){ outEl.textContent = "Paste an email first."; return; }
+      outEl.textContent = "Drafting...";
+      try {
+        const prompt = `Write a concise, friendly professional reply under 170 words and propose next steps.\n\nEmail:\n${body}`;
+        const out = await runGPT(prompt);
+        outEl.textContent = out;
+      } catch(e){ outEl.textContent = e.message; }
+    });
+
+    // Lead classifier
+    document.getElementById("btnClassify").addEventListener("click", async () => {
+      const txt = (document.getElementById("leadText").value || "").trim();
+      const outEl = document.getElementById("leadOut");
+      if(!txt){ outEl.textContent = "Type messages first."; return; }
+      outEl.textContent = "Classifying...";
+      try {
+        const prompt = `You are a tagger. Categories: Sales, Support, HR.\nReturn JSON array of objects {message, category, confidence}.\nMessages separated by ---.\n\n${txt}`;
+        const raw = await runGPT(prompt);
+        let parsed; try { parsed = JSON.parse(raw); } catch { parsed = null; }
+        outEl.textContent = parsed ? JSON.stringify(parsed, null, 2) : raw;
+      } catch(e){ outEl.textContent = e.message; }
+    });
+
+    // Metrics
+    document.getElementById("btnSeed").addEventListener("click", async () => {
+      const outEl = document.getElementById("metricsOut");
+      outEl.textContent = "Seeding...";
+      try {
+        const payload = await seedMetrics();
+        outEl.textContent = "Wrote:\n" + JSON.stringify(payload, null, 2);
+      } catch(e){ outEl.textContent = e.message + "\n\nIf permission denied, relax demo rules or sign in a user."; }
+    });
+    document.getElementById("btnPeek").addEventListener("click", async () => {
+      const outEl = document.getElementById("metricsOut");
+      outEl.textContent = "Reading...";
+      try {
+        const data = await peekMetrics();
+        outEl.textContent = JSON.stringify(data, null, 2) || "(empty)";
+      } catch(e){ outEl.textContent = e.message; }
+    });
+
+    // Mini chat
+    document.getElementById("btnChat").addEventListener("click", async () => {
+      const input = document.getElementById("chatInput");
+      const msg = (input.value || "").trim(); if(!msg) return;
+      const log = document.getElementById("chatLog");
+      log.innerHTML += `<div><span class="pill">You</span> ${msg}</div>`;
+      try {
+        const out = await runGPT(msg);
+        log.innerHTML += `<div><span class="pill">Bot</span> ${out}</div>`;
+      } catch(e){
+        log.innerHTML += `<div class="err mono">${e.message}</div>`;
+      }
+      input.value = "";
+    });
+  });
+  </script>
+</body>
+</html>
