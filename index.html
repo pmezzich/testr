@@ -198,6 +198,12 @@
     pie: ["/api/metrics/pie", "/api/pie", "/pie"]
   };
 
+  // === Backend status + controls ===
+  let BACKEND_UP = false; // set true if health check succeeds
+  // Set this before the script to skip backend metrics/pie entirely:
+  // <script>window.MEZZAI_FORCE_FALLBACK_METRICS = true;</script>
+
+
   async function callFirst(paths, init){
     let lastErr;
     for (const p of paths){
@@ -234,6 +240,13 @@
   }
 
   async function beMetricsSeed(){
+    if (!BACKEND_UP || window.MEZZAI_FORCE_FALLBACK_METRICS) {
+      if (!DB) throw new Error("Backend down and Firebase not available");
+      const ref = DB.ref("metrics/demo");
+      const payload = { at:Date.now(), opensToday:rand(40,240), leadsThisWeek:rand(5,35), proposals:rand(1,16) };
+      await ref.set(payload); 
+      return payload;
+    }
     try { return await callFirst(EP.metricsSeed, { method:"POST" }); }
     catch(e){
       if (!DB) throw e; // fallback requires Firebase
@@ -243,6 +256,11 @@
     }
   }
   async function beMetricsPeek(){
+    if (!BACKEND_UP || window.MEZZAI_FORCE_FALLBACK_METRICS) {
+      if (!DB) throw new Error("Backend down and Firebase not available");
+      const snap = await DB.ref("metrics/demo").get();
+      return snap.val();
+    }
     try { return await callFirst(EP.metricsPeek, { method:"GET" }); }
     catch(e){
       if (!DB) throw e;
@@ -264,6 +282,13 @@
 
   async function bePie(type, period, segment){
     const urlParams = new URLSearchParams({ type, period, segment });
+    // If backend isn't healthy or user forces fallback, skip network probes to avoid 404 spam.
+    if (!BACKEND_UP || window.MEZZAI_FORCE_FALLBACK_METRICS) {
+      const labels = PIE_PALETTES[type] || ["A","B","C","D"];
+      const values = labels.map(()=>Math.floor(10 + Math.random()*90));
+      const total = values.reduce((a,b)=>a+b,0);
+      return { labels, values, total };
+    }
     try {
       const data = await callFirst(EP.pie.map(p=>`${p}?${urlParams.toString()}`), { method:"GET" });
       return data; // expect { labels:[], values:[], total }
@@ -350,9 +375,11 @@
     const msg = document.getElementById('healthMsg');
     try {
       const data = await callFirst(EP.health, { method:"GET" });
+      BACKEND_UP = true;
       dot.classList.add('ok');
       msg.textContent = typeof data === 'string' ? data : (data.message || 'OK');
     } catch(e){
+      BACKEND_UP = false;
       dot.classList.remove('ok');
       msg.textContent = `backend not reachable (${e.message})`;
     }
