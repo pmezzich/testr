@@ -18,26 +18,6 @@
     button { background:var(--accent); color:#00122a; border:0; padding:10px 14px; border-radius:12px; cursor:pointer; font-weight:600; }
     button.secondary { background:#223356; color: var(--text); }
     .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
-    pre { white-space:pre-wrap; word-wrap:break-word; background:#0b1426; padding:12px; border-ra<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>MezzAI Demo — Backend Connected (Render)</title>
-  <style>
-    :root { --bg:#0b1220; --card:#121b2e; --muted:#9bb0d3; --text:#e8f0ff; --accent:#4da3ff; }
-    html, body { height:100%; margin:0; font-family:ui-sans-serif, system-ui, Segoe UI, Roboto, Helvetica, Arial; background:var(--bg); color:var(--text); }
-    .wrap { max-width:1100px; margin:0 auto; padding:24px; }
-    h1 { margin:0 0 6px; }
-    .muted { color: var(--muted); font-size: 0.95rem; }
-    .grid { display:grid; grid-template-columns: 1fr 1fr; gap:16px; }
-    .card { background:var(--card); border:1px solid rgba(255,255,255,.06); border-radius:16px; padding:16px; box-shadow:0 4px 24px rgba(0,0,0,.2); }
-    .row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
-    input[type="text"], textarea { width:100%; background:#0b1426; color:var(--text); border:1px solid rgba(255,255,255,.08); border-radius:12px; padding:10px 12px; outline:none; }
-    textarea { min-height:120px; resize:vertical; }
-    button { background:var(--accent); color:#00122a; border:0; padding:10px 14px; border-radius:12px; cursor:pointer; font-weight:600; }
-    button.secondary { background:#223356; color: var(--text); }
-    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
     pre { white-space:pre-wrap; word-wrap:break-word; background:#0b1426; padding:12px; border-radius:12px; border:1px solid rgba(255,255,255,.08); }
     .pill { display:inline-block; padding:4px 8px; border-radius:999px; background:#152038; color:#cfe1ff; font-size:.8rem; }
     .small { font-size:.9rem; }
@@ -58,8 +38,14 @@
 <body>
   <div class="wrap">
     <h1>MezzAI — Backend Connected</h1>
-    <div class="muted">This page calls your <strong>Render backend</strong> for GPT/classification/email. Firebase demo stays client‑side for now. Backend URL: <span id="beUrl" class="mono"></span></div>
-    <div class="footer health"><span id="healthDot" class="dot"></span><span id="healthMsg" class="mono small">checking backend…</span></div>
+    <div class="muted">
+      This page calls your <strong>Render backend</strong> for GPT/classification/email.
+      Backend URL: <span id="beUrl" class="mono"></span>
+    </div>
+    <div class="footer health">
+      <span id="healthDot" class="dot"></span>
+      <span id="healthMsg" class="mono small">checking backend…</span>
+    </div>
 
     <!-- GPT + Email -->
     <div class="grid" style="margin-top:16px">
@@ -98,7 +84,7 @@
 
       <div class="card">
         <strong>📈 KPI Metrics</strong>
-        <p class="small muted">Calls backend endpoints <code>/api/metrics/seed</code> and <code>/api/metrics/peek</code>. (Fallback to Firebase client if backend not present.)</p>
+        <p class="small muted">Calls backend endpoints <code>/api/metrics/seed</code> and <code>/api/metrics/peek</code> (fallback to Firebase demo if backend not present).</p>
         <div class="row">
           <button id="btnSeed">Seed Demo Metrics</button>
           <button id="btnPeek" class="secondary">Peek Latest</button>
@@ -107,7 +93,7 @@
       </div>
     </div>
 
-    <!-- Pie Dashboard (replaces population) -->
+    <!-- Pie Dashboard -->
     <div class="card" style="margin-top:16px">
       <strong>📊 Live Pie Dashboard</strong>
       <p class="small muted">Switch datasets and filters; smooth fade and chart transitions. Uses backend <code>/api/metrics/pie</code> if present.</p>
@@ -138,24 +124,23 @@
 
       <!-- Current selection + value list -->
       <div class="row" style="justify-content:space-between; align-items:flex-end;">
-        <div>
-          <div class="small muted" id="pieTitle">Leads by Source — Today (All)</div>
-        </div>
+        <div><div class="small muted" id="pieTitle">Leads by Source — Today (All)</div></div>
         <div class="small muted" id="pieTotal">Total: –</div>
       </div>
 
       <canvas id="pieChart" style="margin-top:12px; width:100%; height:340px;"></canvas>
-
-      <!-- Legend values (fade in/out) -->
       <div id="pieLegend" class="mono small" style="margin-top:10px"></div>
 
-      <div class="footer small">Tip: Add your own datasets in the backend. Frontend will discover them via <code>/api/metrics/pie?type=…&period=…&segment=…</code>.</div>
+      <div class="footer small">
+        Tip: Add your own datasets in the backend. Frontend will discover them via
+        <code>/api/metrics/pie?type=…&period=…&segment=…</code>.
+      </div>
     </div>
 
     <!-- Mini Chat -->
     <div class="card" style="margin-top:16px">
       <strong>💬 Mini Chat</strong>
-      <p class="small muted">Single‑turn chat via backend.</p>
+      <p class="small muted">Single-turn chat via backend.</p>
       <div class="row">
         <input id="chatInput" type="text" placeholder="Ask something…" />
         <button id="btnChat">Send</button>
@@ -191,7 +176,16 @@
     measurementId: "G-XQF3EFBM8S"
   };
   let DB = null;
-  try { firebase.initializeApp(FIREBASE_CONFIG); DB = firebase.database(); } catch (e) { /* ignore if already init */ }
+  try {
+    if (window.firebase) {
+      if (!firebase.apps || firebase.apps.length === 0) {
+        firebase.initializeApp(FIREBASE_CONFIG);
+      }
+      DB = firebase.database();
+    }
+  } catch (e) {
+    // ignored
+  }
 
   // ====== Endpoint map (we'll try in order until one works) ======
   const EP = {
@@ -210,7 +204,6 @@
       try {
         const res = await fetch(BACKEND_URL + p, init);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        // Try JSON first, then text
         const ct = res.headers.get('content-type') || '';
         if (ct.includes('application/json')) return await res.json();
         return await res.text();
@@ -270,14 +263,12 @@
   function ensureArray(v){ return Array.isArray(v) ? v : []; }
 
   async function bePie(type, period, segment){
-    // Try backend first
     const urlParams = new URLSearchParams({ type, period, segment });
     try {
       const data = await callFirst(EP.pie.map(p=>`${p}?${urlParams.toString()}`), { method:"GET" });
       return data; // expect { labels:[], values:[], total }
     } catch(e){
-      // Fallback: synthesize demo data matching the palettes
-      const labels = PIE_PALETTES[type] || ["A","B","C","D"]; 
+      const labels = PIE_PALETTES[type] || ["A","B","C","D"];
       const values = labels.map(()=>Math.floor(10 + Math.random()*90));
       const total = values.reduce((a,b)=>a+b,0);
       return { labels, values, total };
@@ -308,10 +299,7 @@
 
   function writeLegend(labels, values){
     const total = values.reduce((a,b)=>a+b,0) || 1;
-    const rows = labels.map((l,i)=>{
-      const pct = (100*values[i]/total).toFixed(1);
-      return `${l}: ${values[i]} (${pct}%)`;
-    });
+    const rows = labels.map((l,i)=>`${l}: ${values[i]} (${(100*values[i]/total).toFixed(1)}%)`);
     document.getElementById('pieLegend').textContent = rows.join('  |  ');
     document.getElementById('pieTotal').textContent = `Total: ${total}`;
   }
@@ -330,9 +318,7 @@
     renderPie(labels, values);
     writeLegend(labels, values);
 
-    const title = `${
-      type==='leads'?'Leads by Source': type==='tickets'?'Support Tickets':'Response Outcomes'
-    } — ${period[0].toUpperCase()+period.slice(1)} (${segment.replace('-', ' ')})`;
+    const title = `${type==='leads'?'Leads by Source': type==='tickets'?'Support Tickets':'Response Outcomes'} — ${period[0].toUpperCase()+period.slice(1)} (${segment.replace('-', ' ')})`;
     document.getElementById('pieTitle').textContent = title;
   }
 
@@ -341,15 +327,22 @@
     const tm = document.getElementById('timeFilters');
     const sg = document.getElementById('segmentFilters');
 
-    ds.addEventListener('click', (e)=>{ if(e.target.matches('.chip')){ setActive(e.target, ds); fadeSection(document.getElementById('segmentSection'), e.target.dataset.dataset!=='tickets'); refreshPie(); } });
-    tm.addEventListener('click', (e)=>{ if(e.target.matches('.chip')){ setActive(e.target, tm); refreshPie(); } });
-    sg.addEventListener('click', (e)=>{ if(e.target.matches('.chip')){ setActive(e.target, sg); refreshPie(); } });
+    ds.addEventListener('click', (e)=>{
+      if(e.target.matches('.chip')){
+        setActive(e.target, ds);
+        fadeSection(document.getElementById('segmentSection'), e.target.dataset.dataset!=='tickets');
+        refreshPie();
+      }
+    });
+    tm.addEventListener('click', (e)=>{
+      if(e.target.matches('.chip')){ setActive(e.target, tm); refreshPie(); }
+    });
+    sg.addEventListener('click', (e)=>{
+      if(e.target.matches('.chip')){ setActive(e.target, sg); refreshPie(); }
+    });
   }
 
-  function startPieLoop(){
-    // Auto-refresh every 5 seconds to feel "live"
-    setInterval(refreshPie, 5000);
-  }
+  function startPieLoop(){ setInterval(refreshPie, 5000); }
 
   // === Health check ===
   async function healthCheck(){
@@ -368,325 +361,9 @@
   // === UI wiring ===
   window.addEventListener("DOMContentLoaded", async () => {
     healthCheck();
-
-    // Start the new Pie dashboard
     wirePieUI();
     await refreshPie();
     startPieLoop();
-
-    // GPT playground
-    document.getElementById("btnRunGPT").addEventListener("click", async () => {
-      const outEl = document.getElementById("gptOut");
-      outEl.textContent = "Running via backend…";
-      try {
-        const prompt = (document.getElementById("gptPrompt").value || "Say hello in one short line.");
-        const out = await beChat(prompt);
-        outEl.textContent = out;
-      } catch(e){ outEl.textContent = e.message; }
-    });
-
-    // Email draft
-    document.getElementById("btnEmailDraft").addEventListener("click", async () => {
-      const body = (document.getElementById("emailBody").value || "").trim();
-      const outEl = document.getElementById("emailOut");
-      if(!body){ outEl.textContent = "Paste an email first."; return; }
-      outEl.textContent = "Drafting via backend…";
-      try { const out = await beEmailDraft(body); outEl.textContent = out; }
-      catch(e){ outEl.textContent = e.message; }
-    });
-
-    // Lead classifier
-    document.getElementById("btnClassify").addEventListener("click", async () => {
-      const txt = (document.getElementById("leadText").value || "").trim();
-      const outEl = document.getElementById("leadOut");
-      if(!txt){ outEl.textContent = "Type messages first."; return; }
-      outEl.textContent = "Classifying via backend…";
-      try {
-        const data = await beClassify(txt);
-        const pretty = (typeof data === 'string') ? data : JSON.stringify(data, null, 2);
-        outEl.textContent = pretty;
-      } catch(e){ outEl.textContent = e.message; }
-    });
-
-    // Metrics
-    document.getElementById("btnSeed").addEventListener("click", async () => {
-      const outEl = document.getElementById("metricsOut");
-      outEl.textContent = "Seeding (backend or Firebase fallback)…";
-      try { const payload = await beMetricsSeed(); outEl.textContent = "Wrote:
-" + JSON.stringify(payload, null, 2); }
-      catch(e){ outEl.textContent = e.message; }
-    });
-    document.getElementById("btnPeek").addEventListener("click", async () => {
-      const outEl = document.getElementById("metricsOut");
-      outEl.textContent = "Reading (backend or Firebase fallback)…";
-      try { const data = await beMetricsPeek(); outEl.textContent = JSON.stringify(data, null, 2) || "(empty)"; }
-      catch(e){ outEl.textContent = e.message; }
-    });
-
-    // Mini chat
-    document.getElementById("btnChat").addEventListener("click", async () => {
-      const input = document.getElementById("chatInput");
-      const msg = (input.value || "").trim(); if(!msg) return;
-      const log = document.getElementById("chatLog");
-      log.innerHTML += `<div><span class="pill">You</span> ${msg}</div>`;
-      try { const out = await beChat(msg); log.innerHTML += `<div><span class="pill">Bot</span> ${out}</div>`; }
-      catch(e){ log.innerHTML += `<div class="err mono">${e.message}</div>`; }
-      input.value = "";
-    });
-  });
-  </script>
-</body>
-</html>
-dius:12px; border:1px solid rgba(255,255,255,.08); }
-    .pill { display:inline-block; padding:4px 8px; border-radius:999px; background:#152038; color:#cfe1ff; font-size:.8rem; }
-    .small { font-size:.9rem; }
-    .ok { color:#86efac; }
-    .err { color:#fca5a5; }
-    .footer { margin-top:18px; color:#8ea7ce; font-size:.85rem; }
-    @media (max-width: 1100px){ .grid { grid-template-columns: 1fr; } }
-    .value-big { font-size:1.6rem; font-weight:800; letter-spacing:.5px; }
-    .health { display:inline-flex; align-items:center; gap:8px; }
-    .dot { width:10px; height:10px; border-radius:50%; background:#fca5a5; }
-    .dot.ok { background:#86efac; }
-  </style>
-</head>
-<body>
-  <div class="wrap">
-    <h1>MezzAI — Backend Connected</h1>
-    <div class="muted">This page calls your <strong>Render backend</strong> for GPT/classification/email. Firebase demo stays client‑side for now. Backend URL: <span id="beUrl" class="mono"></span></div>
-    <div class="footer health"><span id="healthDot" class="dot"></span><span id="healthMsg" class="mono small">checking backend…</span></div>
-
-    <!-- GPT + Email -->
-    <div class="grid" style="margin-top:16px">
-      <div class="card">
-        <strong>🤖 GPT Playground</strong>
-        <p class="small muted">Routes to backend (no API key in browser).</p>
-        <textarea id="gptPrompt" placeholder="Type a prompt…"></textarea>
-        <div class="row" style="margin-top:10px">
-          <button id="btnRunGPT">Run GPT</button>
-        </div>
-        <div id="gptOut" class="footer mono"></div>
-      </div>
-
-      <div class="card">
-        <strong>✉️ Email Draft</strong>
-        <p class="small muted">Paste an email. Backend returns a concise reply.</p>
-        <textarea id="emailBody" placeholder="Paste email text here…"></textarea>
-        <div class="row" style="margin-top:10px">
-          <button id="btnEmailDraft">Generate Reply</button>
-        </div>
-        <div id="emailOut" class="footer mono"></div>
-      </div>
-    </div>
-
-    <!-- Lead Classifier + Metrics -->
-    <div class="grid" style="margin-top:16px">
-      <div class="card">
-        <strong>🗂️ Lead Classifier</strong>
-        <p class="small muted">Enter messages separated by <code>---</code>. Returns JSON from backend.</p>
-        <textarea id="leadText" placeholder="Acme asking for a demo on Tuesday --- My PTO request for Thursday --- Cannot login to dashboard"></textarea>
-        <div class="row" style="margin-top:10px">
-          <button id="btnClassify">Classify</button>
-        </div>
-        <pre id="leadOut"></pre>
-      </div>
-
-      <div class="card">
-        <strong>📈 KPI Metrics</strong>
-        <p class="small muted">Calls backend endpoints <code>/api/metrics/seed</code> and <code>/api/metrics/peek</code>. (Fallback to Firebase client if backend not present.)</p>
-        <div class="row">
-          <button id="btnSeed">Seed Demo Metrics</button>
-          <button id="btnPeek" class="secondary">Peek Latest</button>
-        </div>
-        <pre id="metricsOut"></pre>
-      </div>
-    </div>
-
-    <!-- Live Population Chart -->
-    <div class="card" style="margin-top:16px">
-      <strong>🌍 Live World Population</strong>
-      <p class="small muted">
-        Baseline: <span id="popBase" class="mono"></span> — Growth rate: <span id="popRate" class="mono"></span> per second.
-      </p>
-      <div class="row" style="justify-content:space-between; align-items:flex-end;">
-        <div>
-          <div class="small muted">Estimated current world population</div>
-          <div id="popValue" class="value-big mono">–</div>
-        </div>
-      </div>
-      <canvas id="worldPopChart" style="margin-top:12px; width:100%; height:320px;"></canvas>
-      <div class="footer small">Source: backend <code>/api/population</code> if available, otherwise local baseline.</div>
-    </div>
-
-    <!-- Mini Chat -->
-    <div class="card" style="margin-top:16px">
-      <strong>💬 Mini Chat</strong>
-      <p class="small muted">Single‑turn chat via backend.</p>
-      <div class="row">
-        <input id="chatInput" type="text" placeholder="Ask something…" />
-        <button id="btnChat">Send</button>
-      </div>
-      <div id="chatLog" class="footer"></div>
-    </div>
-
-    <div class="footer">
-      ⚠️ If you see CORS errors, enable CORS on the backend for this origin.
-    </div>
-  </div>
-
-  <!-- Firebase Client SDK (compat) for fallback only -->
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-  <!-- Chart.js -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-
-  <script>
-  // ====== BACKEND BASE URL ======
-  const BACKEND_URL = (window.MEZZAI_BACKEND_URL || "https://mezzai-backend.onrender.com").replace(/\/$/, "");
-  document.getElementById("beUrl").textContent = BACKEND_URL;
-
-  // ====== OPTIONAL FIREBASE FALLBACK (used only if backend metrics endpoints missing) ======
-  const FIREBASE_CONFIG = {
-    apiKey: "AIzaSyCs8BOeV5LVA60qjkAK0BMn_vxq-TzlLXM",
-    authDomain: "mezzai.firebaseapp.com",
-    databaseURL: "https://mezzai-default-rtdb.firebaseio.com",
-    projectId: "mezzai",
-    storageBucket: "mezzai.firebasestorage.app",
-    messagingSenderId: "889134910925",
-    appId: "1:889134910925:web:88c3568f22d64725378884",
-    measurementId: "G-XQF3EFBM8S"
-  };
-  let DB = null;
-  try { firebase.initializeApp(FIREBASE_CONFIG); DB = firebase.database(); } catch (e) { /* ignore if already init */ }
-
-  // ====== Endpoint map (we'll try in order until one works) ======
-  const EP = {
-    health: ["/api/health", "/health", "/.well-known/health"],
-    chat: ["/api/chat", "/chat", "/v1/chat"],
-    emailDraft: ["/api/email-draft", "/email-draft", "/v1/email"],
-    classify: ["/api/classify", "/classify", "/v1/classify"],
-    metricsSeed: ["/api/metrics/seed", "/metrics/seed"],
-    metricsPeek: ["/api/metrics/peek", "/metrics/peek"],
-    population: ["/api/population", "/population"]
-  };
-
-  async function callFirst(paths, init){
-    let lastErr;
-    for (const p of paths){
-      try {
-        const res = await fetch(BACKEND_URL + p, init);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        // Try JSON first, then text
-        const ct = res.headers.get('content-type') || '';
-        if (ct.includes('application/json')) return await res.json();
-        return await res.text();
-      } catch(e){ lastErr = e; }
-    }
-    throw lastErr || new Error("All endpoints failed");
-  }
-
-  // === Backend helpers ===
-  async function beChat(prompt){
-    const body = JSON.stringify({ prompt });
-    const data = await callFirst(EP.chat, { method:"POST", headers:{"Content-Type":"application/json"}, body });
-    if (typeof data === 'string') return data;
-    return data.text || data.output || JSON.stringify(data);
-  }
-
-  async function beEmailDraft(email){
-    const body = JSON.stringify({ email });
-    const data = await callFirst(EP.emailDraft, { method:"POST", headers:{"Content-Type":"application/json"}, body });
-    if (typeof data === 'string') return data;
-    return data.text || data.output || JSON.stringify(data);
-  }
-
-  async function beClassify(text){
-    const body = JSON.stringify({ text });
-    const data = await callFirst(EP.classify, { method:"POST", headers:{"Content-Type":"application/json"}, body });
-    return data; // expect JSON
-  }
-
-  async function beMetricsSeed(){
-    try { return await callFirst(EP.metricsSeed, { method:"POST" }); }
-    catch(e){
-      if (!DB) throw e; // fallback requires Firebase
-      const ref = DB.ref("metrics/demo");
-      const payload = { at:Date.now(), opensToday:rand(40,240), leadsThisWeek:rand(5,35), proposals:rand(1,16) };
-      await ref.set(payload); return payload;
-    }
-  }
-  async function beMetricsPeek(){
-    try { return await callFirst(EP.metricsPeek, { method:"GET" }); }
-    catch(e){
-      if (!DB) throw e;
-      const snap = await DB.ref("metrics/demo").get();
-      return snap.val();
-    }
-  }
-
-  function rand(min,max){ return Math.floor(Math.random()*(max-min)+min); }
-
-  // === Population (prefer backend) ===
-  const LOCAL_POP = { base: 8213500000, baseAtISO: "2025-10-20T11:20:00Z", netPerSec: 70000000/(365*24*3600) };
-  let POP = { ...LOCAL_POP };
-  function currentPopulationEstimate(){
-    const seconds = (Date.now() - Date.parse(POP.baseAtISO))/1000;
-    return POP.base + seconds * POP.netPerSec;
-  }
-  function formatNumber(n){ return n.toLocaleString(undefined, { maximumFractionDigits: 0 }); }
-
-  let popChart;
-  function startPopulationChart(){
-    const ctx = document.getElementById("worldPopChart").getContext("2d");
-    const labels = []; const data = []; const now = Date.now();
-    for (let i=59; i>=0; i--) { labels.push(new Date(now - i*1000).toLocaleTimeString()); data.push(currentPopulationEstimate() - (59-i)*POP.netPerSec); }
-    popChart = new Chart(ctx, {
-      type: "line",
-      data: { labels, datasets: [{ label: "Estimated Population", data, tension: 0.25, borderWidth: 2, pointRadius: 0 }] },
-      options: { responsive:true, animation:false, scales:{ y:{ ticks:{ callback:(v)=>formatNumber(v) } } }, plugins:{ legend:{ display:false }, tooltip:{ callbacks:{ label: ctx => " " + formatNumber(ctx.parsed.y) } } } }
-    });
-
-    document.getElementById("popBase").textContent = `${formatNumber(POP.base)} @ ${new Date(POP.baseAtISO).toLocaleString()}`;
-    document.getElementById("popRate").textContent = (POP.netPerSec).toFixed(2);
-    document.getElementById("popValue").textContent = formatNumber(currentPopulationEstimate());
-
-    setInterval(() => {
-      const y = currentPopulationEstimate();
-      const t = new Date().toLocaleTimeString();
-      popChart.data.labels.push(t);
-      popChart.data.datasets[0].data.push(y);
-      if (popChart.data.labels.length > 60) { popChart.data.labels.shift(); popChart.data.datasets[0].data.shift(); }
-      popChart.update("none");
-      document.getElementById("popValue").textContent = formatNumber(y);
-    }, 1000);
-  }
-
-  async function tryLoadPopulationFromBackend(){
-    try {
-      const data = await callFirst(EP.population, { method:"GET" });
-      if (data && data.base && data.baseAtISO && data.netPerSec){ POP = { base:Number(data.base), baseAtISO:String(data.baseAtISO), netPerSec:Number(data.netPerSec) }; }
-    } catch(e){ /* keep local POP */ }
-  }
-
-  // === Health check ===
-  async function healthCheck(){
-    const dot = document.getElementById('healthDot');
-    const msg = document.getElementById('healthMsg');
-    try {
-      const data = await callFirst(EP.health, { method:"GET" });
-      dot.classList.add('ok');
-      msg.textContent = typeof data === 'string' ? data : (data.message || 'OK');
-    } catch(e){
-      dot.classList.remove('ok');
-      msg.textContent = `backend not reachable (${e.message})`;
-    }
-  }
-
-  // === UI wiring ===
-  window.addEventListener("DOMContentLoaded", async () => {
-    healthCheck();
-    await tryLoadPopulationFromBackend();
-    startPopulationChart();
 
     // GPT playground
     document.getElementById("btnRunGPT").addEventListener("click", async () => {
