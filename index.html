@@ -156,6 +156,7 @@
   // ====== BACKEND BASE URL ======
   const BACKEND_URL = (window.MEZZAI_BACKEND_URL || "https://mezzai-backend.onrender.com").replace(/\/$/, "");
   document.getElementById("beUrl").textContent = BACKEND_URL;
+  console.log("[CHECKPOINT] Script loaded — backend URL =", BACKEND_URL);
 
   // ====== Endpoint map ======
   const EP = {
@@ -169,21 +170,27 @@
   };
 
   // === Backend status + controls ===
-  let BACKEND_UP = false; // set true if health check succeeds
+  let console.log("[CHECKPOINT] Health failed:", e);
+      BACKEND_UP = false; // set true if health check succeeds
   // Set this to force local fallback for metrics/pie (not needed if backend has routes)
   window.MEZZAI_FORCE_FALLBACK_METRICS = false;
 
   async function callFirst(paths, init){
+  let stepID = Math.random().toString(36).slice(2,7);
+  console.log("[CHECKPOINT] callFirst invoked", stepID, paths);
     let lastErr;
     for (const p of paths){
       try {
-        const res = await fetch(BACKEND_URL + p, init);
+        const full = BACKEND_URL + p;
+      console.log("[CHECKPOINT]", stepID, "fetching", full);
+      const res = await fetch(full, init);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const ct = res.headers.get('content-type') || '';
         if (ct.includes('application/json')) return await res.json();
         return await res.text();
       } catch(e){ lastErr = e; }
     }
+    console.log("[CHECKPOINT]", stepID, "all endpoints failed");
     throw lastErr || new Error("All endpoints failed");
   }
 
@@ -313,14 +320,18 @@
 
   // === Health check ===
   async function healthCheck(){
+  console.log("[CHECKPOINT] Running healthCheck()");
     const dot = document.getElementById('healthDot');
     const msg = document.getElementById('healthMsg');
     try {
-      const data = await callFirst(EP.health, { method:"GET" });
+      console.log("[CHECKPOINT] Trying health endpoints", EP.health);
+    const data = await callFirst(EP.health, { method:"GET" });
+    console.log("[CHECKPOINT] Health success:", data);
       BACKEND_UP = true;
       dot.classList.add('ok');
       msg.textContent = typeof data === 'string' ? data : (data.message || 'OK');
     } catch(e){
+      console.log("[CHECKPOINT] Health failed:", e);
       BACKEND_UP = false;
       dot.classList.remove('ok');
       msg.textContent = `backend not reachable (${e.message})`;
@@ -335,6 +346,8 @@
     startPieLoop();
 
     // GPT playground
+    console.log("[CHECKPOINT] attaching handler for Run GPT");
+    document.getElementById("btnRunGPT").addEventListener("click", () => console.log("[CHECKPOINT] Run GPT clicked"));
     document.getElementById("btnRunGPT").addEventListener("click", async () => {
       const outEl = document.getElementById("gptOut");
       outEl.textContent = "Running via backend…";
@@ -346,6 +359,8 @@
     });
 
     // Email draft
+    console.log("[CHECKPOINT] attaching handler for Email Draft");
+    document.getElementById("btnEmailDraft").addEventListener("click", () => console.log("[CHECKPOINT] Email Draft clicked"));
     document.getElementById("btnEmailDraft").addEventListener("click", async () => {
       const body = (document.getElementById("emailBody").value || "").trim();
       const outEl = document.getElementById("emailOut");
@@ -356,6 +371,8 @@
     });
 
     // Lead classifier
+    console.log("[CHECKPOINT] attaching handler for Classify");
+    document.getElementById("btnClassify").addEventListener("click", () => console.log("[CHECKPOINT] Classify clicked"));
     document.getElementById("btnClassify").addEventListener("click", async () => {
       const txt = (document.getElementById("leadText").value || "").trim();
       const outEl = document.getElementById("leadOut");
@@ -369,12 +386,16 @@
     });
 
     // Metrics
+    console.log("[CHECKPOINT] attaching handler for Seed");
+    document.getElementById("btnSeed").addEventListener("click", () => console.log("[CHECKPOINT] Seed clicked"));
     document.getElementById("btnSeed").addEventListener("click", async () => {
       const outEl = document.getElementById("metricsOut");
       outEl.textContent = "Seeding (backend)…";
       try { const payload = await beMetricsSeed(); outEl.textContent = "Wrote:\n" + JSON.stringify(payload, null, 2); }
       catch(e){ outEl.textContent = e.message; }
     });
+    console.log("[CHECKPOINT] attaching handler for Peek");
+    document.getElementById("btnPeek").addEventListener("click", () => console.log("[CHECKPOINT] Peek clicked"));
     document.getElementById("btnPeek").addEventListener("click", async () => {
       const outEl = document.getElementById("metricsOut");
       outEl.textContent = "Reading (backend)…";
@@ -383,6 +404,8 @@
     });
 
     // Mini chat
+    console.log("[CHECKPOINT] attaching handler for Mini Chat");
+    document.getElementById("btnChat").addEventListener("click", () => console.log("[CHECKPOINT] Mini Chat clicked"));
     document.getElementById("btnChat").addEventListener("click", async () => {
       const input = document.getElementById("chatInput");
       const msg = (input.value || "").trim(); if(!msg) return;
