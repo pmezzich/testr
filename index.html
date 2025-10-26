@@ -333,7 +333,8 @@
       console.log("[CHECKPOINT] Health failed:", e);
       BACKEND_UP = false;
       dot.classList.remove('ok');
-      msg.textContent = `backend not reachable (${e.message})`;
+      const detail = (e && typeof e.message === 'string') ? e.message : String(e || 'error');
+      msg.textContent = 'backend not reachable (' + detail + ')';
     }
   }
 
