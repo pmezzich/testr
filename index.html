@@ -170,20 +170,19 @@
   };
 
   // === Backend status + controls ===
-  console.log("[CHECKPOINT] Health failed:", e);
-      BACKEND_UP = false; // set true if health check succeeds
+  let BACKEND_UP = false; // set true if health check succeeds
   // Set this to force local fallback for metrics/pie (not needed if backend has routes)
   window.MEZZAI_FORCE_FALLBACK_METRICS = false;
 
   async function callFirst(paths, init){
-  let stepID = Math.random().toString(36).slice(2,7);
-  console.log("[CHECKPOINT] callFirst invoked", stepID, paths);
+    const stepID = Math.random().toString(36).slice(2,7);
+    console.log("[CHECKPOINT] callFirst invoked", stepID, paths);
     let lastErr;
     for (const p of paths){
       try {
         const full = BACKEND_URL + p;
-      console.log("[CHECKPOINT]", stepID, "fetching", full);
-      const res = await fetch(full, init);
+        console.log("[CHECKPOINT]", stepID, "fetching", full);
+        const res = await fetch(full, init);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const ct = res.headers.get('content-type') || '';
         if (ct.includes('application/json')) return await res.json();
@@ -292,7 +291,7 @@
     renderPie(labels, values);
     writeLegend(labels, values);
 
-    const title = `${type==='leads'?'Leads by Source': type==='tickets'?'Support Tickets':'Response Outcomes'} — ${period[0].toUpperCase()+period.slice(1)} (${segment.replace('-', ' ')})';
+    const title = `${type==='leads'?'Leads by Source': type==='tickets'?'Support Tickets':'Response Outcomes'} — ${period[0].toUpperCase()+period.slice(1)} (${segment.replace('-', ' ')})`;
     document.getElementById('pieTitle').textContent = title;
   }
 
@@ -334,7 +333,8 @@
       console.log("[CHECKPOINT] Health failed:", e);
       BACKEND_UP = false;
       dot.classList.remove('ok');
-      msg.textContent = `backend not reachable (${e.message})`;
+      const detail = (e && typeof e.message === 'string') ? e.message : String(e || 'error');
+      msg.textContent = 'backend not reachable (' + detail + ')';
     }
   }
 
