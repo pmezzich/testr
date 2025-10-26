@@ -291,7 +291,7 @@
     renderPie(labels, values);
     writeLegend(labels, values);
 
-    const title = `${type==='leads'?'Leads by Source': type==='tickets'?'Support Tickets':'Response Outcomes'} — ${period[0].toUpperCase()+period.slice(1)} (${segment.replace('-', ' ')})';
+    const title = `${type==='leads'?'Leads by Source': type==='tickets'?'Support Tickets':'Response Outcomes'} — ${period[0].toUpperCase()+period.slice(1)} (${segment.replace('-', ' ')})`;
     document.getElementById('pieTitle').textContent = title;
   }
 
